@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enhanced Word Card Features Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f7fa; }
+        .demo-container { max-width: 1200px; margin: 0 auto; }
+        .feature-section { 
+            background: white; 
+            margin: 20px 0; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .test-card { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border-left: 4px solid #007bff;
+        }
+        .result-box { 
+            background: #e3f2fd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .interval-badge { 
+            background: #28a745; 
+            color: white; 
+            padding: 2px 8px; 
+            border-radius: 12px; 
+            font-size: 12px; 
+            margin: 2px;
+            display: inline-block;
+        }
+        .word-sample { 
+            background: white; 
+            padding: 10px; 
+            margin: 5px 0; 
+            border-radius: 6px; 
+            border: 1px solid #ddd;
+        }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 15px; 
+            margin: 15px 0;
+        }
+        .stat-card { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            text-align: center; 
+            border-radius: 8px;
+        }
+        .stat-number { font-size: 24px; font-weight: bold; color: #007bff; }
+        .stat-label { font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🚀 Enhanced English Word Card Features</h1>
+        <p>Comprehensive testing of word generation, customizable spaced repetition, and subject categories.</p>
+
+        <!-- Feature 1: Grade-based Word Generation -->
+        <div class="feature-section">
+            <h2>📚 Grade-Based Word Generation</h2>
+            <div class="feature-grid">
+                <div class="test-card">
+                    <h3>Elementary Words</h3>
+                    <button onclick="testGradeWords('elementary', 3)">Generate Elementary</button>
+                    <div id="elementary-result" class="result-box"></div>
+                </div>
+                <div class="test-card">
+                    <h3>College Level Words</h3>
+                    <button onclick="testGradeWords('college', 3)">Generate College</button>
+                    <div id="college-result" class="result-box"></div>
+                </div>
+                <div class="test-card">
+                    <h3>TOEFL Preparation</h3>
+                    <button onclick="testGradeWords('toefl', 3)">Generate TOEFL</button>
+                    <div id="toefl-result" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature 2: Subject-based Word Generation -->
+        <div class="feature-section">
+            <h2>🎯 Subject-Based Word Generation</h2>
+            <div class="feature-grid">
+                <div class="test-card">
+                    <h3>Business & Finance</h3>
+                    <button onclick="testSubjectWords('business', 3)">Generate Business</button>
+                    <div id="business-result" class="result-box"></div>
+                </div>
+                <div class="test-card">
+                    <h3>Technology & IT</h3>
+                    <button onclick="testSubjectWords('technology', 3)">Generate Tech</button>
+                    <div id="technology-result" class="result-box"></div>
+                </div>
+                <div class="test-card">
+                    <h3>Medicine & Health</h3>
+                    <button onclick="testSubjectWords('medicine', 3)">Generate Medical</button>
+                    <div id="medicine-result" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature 3: Customizable Spaced Repetition -->
+        <div class="feature-section">
+            <h2>🧠 Customizable Spaced Repetition Algorithms</h2>
+            <div class="feature-grid">
+                <div class="test-card">
+                    <h3>Standard Memory Curve</h3>
+                    <p>Balanced intervals: <span id="default-intervals"></span></p>
+                    <button onclick="testSpacedRepetition('default')">Test Standard</button>
+                </div>
+                <div class="test-card">
+                    <h3>Aggressive Learning</h3>
+                    <p>Fast progression: <span id="aggressive-intervals"></span></p>
+                    <button onclick="testSpacedRepetition('aggressive')">Test Aggressive</button>
+                </div>
+                <div class="test-card">
+                    <h3>Conservative Retention</h3>
+                    <p>Slow progression: <span id="conservative-intervals"></span></p>
+                    <button onclick="testSpacedRepetition('conservative')">Test Conservative</button>
+                </div>
+            </div>
+            <div id="repetition-result" class="result-box"></div>
+        </div>
+
+        <!-- Feature 4: Study Plan Creation -->
+        <div class="feature-section">
+            <h2>📅 Advanced Study Plan Creation</h2>
+            <button onclick="createTestStudyPlan()">Create Sample Study Plan</button>
+            <div id="study-plan-result" class="result-box"></div>
+            <div id="study-stats" class="stats-grid"></div>
+        </div>
+
+        <!-- Feature 5: Word Difficulty Analysis -->
+        <div class="feature-section">
+            <h2>🎯 Word Difficulty Analysis</h2>
+            <button onclick="analyzeDifficulty()">Analyze Word Difficulty</button>
+            <div id="difficulty-result" class="result-box"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated services for testing
+        const WordLibrary = {
+            wordDatabase: {
+                elementary: [
+                    { english: 'cat', chinese: '猫', pronunciation: '/kæt/', example: 'The cat is sleeping.' },
+                    { english: 'dog', chinese: '狗', pronunciation: '/dɔːɡ/', example: 'My dog is friendly.' },
+                    { english: 'book', chinese: '书', pronunciation: '/bʊk/', example: 'I read a book.' }
+                ],
+                college: [
+                    { english: 'accommodate', chinese: '容纳', pronunciation: '/əˈkɑːmədeɪt/', example: 'The university can accommodate 5000 students.' },
+                    { english: 'coherent', chinese: '连贯的', pronunciation: '/koʊˈhɪrənt/', example: 'Please write a coherent argument.' },
+                    { english: 'empirical', chinese: '经验的', pronunciation: '/ɪmˈpɪrɪkl/', example: 'The theory is supported by empirical evidence.' }
+                ],
+                toefl: [
+                    { english: 'advocate', chinese: '提倡', pronunciation: '/ˈædvəkeɪt/', example: 'Environmental groups advocate for renewable energy.' },
+                    { english: 'facilitate', chinese: '促进', pronunciation: '/fəˈsɪlɪteɪt/', example: 'Good communication facilitates teamwork.' },
+                    { english: 'implement', chinese: '实施', pronunciation: '/ˈɪmplɪment/', example: 'The school will implement new policies.' }
+                ]
+            },
+            generateWordsByGrade: function(grade, count) {
+                const words = this.wordDatabase[grade] || [];
+                return words.slice(0, count);
+            }
+        };
+
+        const SubjectLibrary = {
+            subjectDatabase: {
+                business: [
+                    { english: 'revenue', chinese: '收入', pronunciation: '/ˈrevənjuː/', example: 'Company revenue increased by 20%.' },
+                    { english: 'investment', chinese: '投资', pronunciation: '/ɪnˈvestmənt/', example: 'This investment will pay off long term.' },
+                    { english: 'strategy', chinese: '策略', pronunciation: '/ˈstrætədʒi/', example: 'Business strategy focuses on digital transformation.' }
+                ],
+                technology: [
+                    { english: 'algorithm', chinese: '算法', pronunciation: '/ˈælɡərɪðəm/', example: 'The search algorithm processes millions of queries.' },
+                    { english: 'encryption', chinese: '加密', pronunciation: '/ɪnˈkrɪpʃn/', example: 'Encryption protects sensitive data.' },
+                    { english: 'framework', chinese: '框架', pronunciation: '/ˈfreɪmwɜːrk/', example: 'The development framework speeds up coding.' }
+                ],
+                medicine: [
+                    { english: 'diagnosis', chinese: '诊断', pronunciation: '/ˌdaɪəɡˈnoʊsɪs/', example: 'The doctor made an accurate diagnosis.' },
+                    { english: 'treatment', chinese: '治疗', pronunciation: '/ˈtriːtmənt/', example: 'The new treatment shows promising results.' },
+                    { english: 'vaccination', chinese: '疫苗接种', pronunciation: '/ˌvæksɪˈneɪʃn/', example: 'Vaccination prevents infectious diseases.' }
+                ]
+            },
+            generateWordsBySubject: function(subject, count) {
+                const words = this.subjectDatabase[subject] || [];
+                return words.slice(0, count);
+            }
+        };
+
+        const StudyPlanService = {
+            intervals: {
+                default: [1, 3, 7, 14, 30, 90, 180, 365],
+                aggressive: [0.5, 1, 2, 4, 8, 20, 45, 120],
+                conservative: [2, 5, 10, 21, 45, 120, 240, 480],
+                exam: [1, 2, 4, 7, 14, 21, 30, 60],
+                longterm: [1, 4, 10, 25, 60, 150, 365, 730]
+            },
+            calculateWordDifficulty: function(word) {
+                let difficulty = 1;
+                if (word.english.length > 8) difficulty += 0.5;
+                if (word.english.length > 12) difficulty += 0.5;
+                const syllables = word.english.split(/[aeiou]/i).length - 1;
+                if (syllables > 3) difficulty += 0.3;
+                if (/[qxz]/.test(word.english.toLowerCase())) difficulty += 0.2;
+                return Math.min(difficulty, 3);
+            },
+            createStudyPlan: function(words, planType, intervalType) {
+                return {
+                    name: `${planType} Study Plan`,
+                    type: planType,
+                    intervalType: intervalType,
+                    totalWords: words.length,
+                    words: words.map(word => ({
+                        ...word,
+                        level: 0,
+                        difficulty: this.calculateWordDifficulty(word),
+                        reviewCount: 0,
+                        correctCount: 0
+                    }))
+                };
+            }
+        };
+
+        // Test functions
+        function testGradeWords(grade, count) {
+            const words = WordLibrary.generateWordsByGrade(grade, count);
+            const resultDiv = document.getElementById(`${grade}-result`);
+            resultDiv.innerHTML = words.map(word => `
+                <div class="word-sample">
+                    <strong>${word.english}</strong> - ${word.chinese}<br>
+                    <em>${word.pronunciation}</em><br>
+                    <small>${word.example}</small>
+                </div>
+            `).join('');
+        }
+
+        function testSubjectWords(subject, count) {
+            const words = SubjectLibrary.generateWordsBySubject(subject, count);
+            const resultDiv = document.getElementById(`${subject}-result`);
+            resultDiv.innerHTML = words.map(word => `
+                <div class="word-sample">
+                    <strong>${word.english}</strong> - ${word.chinese}<br>
+                    <em>${word.pronunciation}</em><br>
+                    <small>${word.example}</small>
+                </div>
+            `).join('');
+        }
+
+        function testSpacedRepetition(intervalType) {
+            const intervals = StudyPlanService.intervals[intervalType];
+            const resultDiv = document.getElementById('repetition-result');
+            const now = new Date();
+            
+            resultDiv.innerHTML = `
+                <h3>${intervalType.toUpperCase()} Spaced Repetition Schedule:</h3>
+                ${intervals.map((interval, level) => {
+                    const reviewDate = new Date(now.getTime() + interval * 24 * 60 * 60 * 1000);
+                    return `
+                        <div style="margin: 8px 0;">
+                            <span class="interval-badge">Level ${level}</span>
+                            Review after ${interval} day${interval !== 1 ? 's' : ''} 
+                            (${reviewDate.toLocaleDateString()})
+                        </div>
+                    `;
+                }).join('')}
+                <p style="margin-top: 15px; font-style: italic;">
+                    ${intervalType === 'aggressive' ? 'Fast progression for quick learners' :
+                      intervalType === 'conservative' ? 'Slower progression for better retention' :
+                      'Balanced intervals based on Ebbinghaus curve'}
+                </p>
+            `;
+        }
+
+        function createTestStudyPlan() {
+            const sampleWords = [
+                ...WordLibrary.generateWordsByGrade('elementary', 3),
+                ...SubjectLibrary.generateWordsBySubject('business', 2)
+            ];
+            
+            const plan = StudyPlanService.createStudyPlan(sampleWords, 'balanced', 'default');
+            const resultDiv = document.getElementById('study-plan-result');
+            const statsDiv = document.getElementById('study-stats');
+            
+            resultDiv.innerHTML = `
+                <h3>Created: ${plan.name}</h3>
+                <p><strong>Plan Type:</strong> ${plan.type}</p>
+                <p><strong>Interval Type:</strong> ${plan.intervalType}</p>
+                <p><strong>Total Words:</strong> ${plan.totalWords}</p>
+                <h4>Sample Words in Plan:</h4>
+                ${plan.words.slice(0, 3).map(word => `
+                    <div class="word-sample">
+                        ${word.english} - Level: ${word.level}, Difficulty: ${word.difficulty.toFixed(1)}
+                    </div>
+                `).join('')}
+            `;
+
+            const avgDifficulty = plan.words.reduce((sum, word) => sum + word.difficulty, 0) / plan.words.length;
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${plan.totalWords}</div>
+                    <div class="stat-label">Total Words</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${avgDifficulty.toFixed(1)}</div>
+                    <div class="stat-label">Avg Difficulty</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">8</div>
+                    <div class="stat-label">Mastery Levels</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Algorithms</div>
+                </div>
+            `;
+        }
+
+        function analyzeDifficulty() {
+            const testWords = [
+                { english: 'cat', chinese: '猫' },
+                { english: 'beautiful', chinese: '美丽的' },
+                { english: 'accommodation', chinese: '住宿' },
+                { english: 'quintessential', chinese: '典型的' }
+            ];
+
+            const resultDiv = document.getElementById('difficulty-result');
+            resultDiv.innerHTML = `
+                <h3>Word Difficulty Analysis:</h3>
+                ${testWords.map(word => {
+                    const difficulty = StudyPlanService.calculateWordDifficulty(word);
+                    return `
+                        <div class="word-sample">
+                            <strong>${word.english}</strong> - Difficulty: ${difficulty.toFixed(1)}/3.0<br>
+                            <small>Length: ${word.english.length} chars, Complexity factors analyzed</small>
+                        </div>
+                    `;
+                }).join('')}
+                <p style="margin-top: 15px; font-style: italic;">
+                    Difficulty calculated based on word length, syllables, and letter patterns.
+                </p>
+            `;
+        }
+
+        // Initialize interval displays
+        window.addEventListener('load', function() {
+            document.getElementById('default-intervals').innerHTML = 
+                StudyPlanService.intervals.default.map(i => `<span class="interval-badge">${i}d</span>`).join(' ');
+            document.getElementById('aggressive-intervals').innerHTML = 
+                StudyPlanService.intervals.aggressive.map(i => `<span class="interval-badge">${i}d</span>`).join(' ');
+            document.getElementById('conservative-intervals').innerHTML = 
+                StudyPlanService.intervals.conservative.map(i => `<span class="interval-badge">${i}d</span>`).join(' ');
+            
+            // Auto-run some tests
+            testGradeWords('elementary', 3);
+            testSubjectWords('business', 3);
+            testSpacedRepetition('default');
+        });
+    </script>
+</body>
+</html>

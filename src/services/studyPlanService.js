@@ -1,15 +1,22 @@
-// Study plan service with spaced repetition based on memory curve
+// Enhanced Study plan service with customizable spaced repetition
 export class StudyPlanService {
-  // Spaced repetition intervals (in days) based on Ebbinghaus forgetting curve
-  static intervals = [1, 3, 7, 14, 30, 90, 180, 365];
+  // Customizable spaced repetition intervals (in days) based on Ebbinghaus forgetting curve
+  static defaultIntervals = [1, 3, 7, 14, 30, 90, 180, 365];
+  static customIntervals = {
+    aggressive: [0.5, 1, 2, 4, 8, 20, 45, 120], // Faster progression for quick learners
+    conservative: [2, 5, 10, 21, 45, 120, 240, 480], // Slower progression for better retention
+    exam: [1, 2, 4, 7, 14, 21, 30, 60], // Optimized for exam preparation
+    longterm: [1, 4, 10, 25, 60, 150, 365, 730] // Focus on long-term retention
+  };
   
-  static createStudyPlan(words, planType = 'balanced') {
+  static createStudyPlan(words, planType = 'balanced', intervalType = 'default') {
     const now = new Date();
     const plan = {
       id: Date.now(),
       name: `${planType.charAt(0).toUpperCase() + planType.slice(1)} Study Plan`,
       createdAt: now,
       type: planType,
+      intervalType: intervalType,
       totalWords: words.length,
       words: words.map((word, index) => ({
         ...word,
@@ -20,7 +27,8 @@ export class StudyPlanService {
         reviewCount: 0,
         correctCount: 0,
         difficulty: this.calculateWordDifficulty(word),
-        addedAt: now
+        addedAt: now,
+        intervalType: intervalType
       })),
       settings: this.getPlanSettings(planType)
     };
@@ -128,7 +136,8 @@ export class StudyPlanService {
     }
 
     // Calculate next review date based on spaced repetition
-    const interval = this.intervals[word.level] || this.intervals[this.intervals.length - 1];
+    const intervals = this.getIntervals(word.intervalType || 'default');
+    const interval = intervals[word.level] || intervals[intervals.length - 1];
     const difficultyMultiplier = word.difficulty || 1;
     const adjustedInterval = Math.round(interval * difficultyMultiplier);
     
@@ -183,31 +192,70 @@ export class StudyPlanService {
     return schedule;
   }
 
+  static getIntervals(intervalType = 'default') {
+    return this.customIntervals[intervalType] || this.defaultIntervals;
+  }
+
+  static getIntervalTypes() {
+    return [
+      {
+        value: 'default',
+        label: 'Standard Memory Curve',
+        description: 'Balanced intervals based on Ebbinghaus curve',
+        intervals: this.defaultIntervals
+      },
+      {
+        value: 'aggressive',
+        label: 'Aggressive Learning',
+        description: 'Faster progression for quick learners',
+        intervals: this.customIntervals.aggressive
+      },
+      {
+        value: 'conservative',
+        label: 'Conservative Retention',
+        description: 'Slower progression for better retention',
+        intervals: this.customIntervals.conservative
+      },
+      {
+        value: 'exam',
+        label: 'Exam Preparation',
+        description: 'Optimized for test preparation',
+        intervals: this.customIntervals.exam
+      },
+      {
+        value: 'longterm',
+        label: 'Long-term Memory',
+        description: 'Focus on permanent retention',
+        intervals: this.customIntervals.longterm
+      }
+    ];
+  }
+
   static getPlanTypes() {
     return [
       {
         value: 'balanced',
         label: 'Balanced Plan',
         description: '10 words/day, good for steady progress',
-        icon: '⚖️'
+        icon: 'balance'
       },
       {
         value: 'intensive',
         label: 'Intensive Plan',
         description: '20 words/day, for fast learners',
-        icon: '🚀'
+        icon: 'rocket'
       },
       {
         value: 'relaxed',
         label: 'Relaxed Plan',
         description: '5 words/day, perfect for beginners',
-        icon: '🌱'
+        icon: 'leaf'
       },
       {
         value: 'exam',
         label: 'Exam Preparation',
         description: '25 words/day, intensive exam prep',
-        icon: '📚'
+        icon: 'book'
       }
     ];
   }

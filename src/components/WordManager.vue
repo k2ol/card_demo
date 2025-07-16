@@ -5,7 +5,7 @@
     <!-- Word Generation by Grade -->
     <div class="generation-section">
       <h4>Generate Words by Grade Level</h4>
-      <div class="ai-controls">
+      <div class="generation-controls">
         <select v-model="selectedGrade" class="grade-select">
           <option value="">Select Grade Level</option>
           <option v-for="grade in gradeOptions" :key="grade.value" :value="grade.value">
@@ -28,6 +28,34 @@
           Generate Words
         </button>
       </div>
+    </div>
+
+    <!-- Word Generation by Subject -->
+    <div class="subject-section">
+      <h4>Generate Words by Subject</h4>
+      <div class="generation-controls">
+        <select v-model="selectedSubject" class="subject-select">
+          <option value="">Select Subject</option>
+          <option v-for="subject in subjectOptions" :key="subject.value" :value="subject.value">
+            {{ subject.label }}
+          </option>
+        </select>
+        <input 
+          v-model.number="subjectWordCount" 
+          type="number" 
+          min="1" 
+          max="20" 
+          placeholder="Count"
+          class="count-input"
+        />
+        <button 
+          @click="generateSubjectWords" 
+          :disabled="!selectedSubject"
+          class="generate-btn"
+        >
+          Generate Subject Words
+        </button>
+      </div>
       <div v-if="generationError" class="error-message">
         {{ generationError }}
       </div>
@@ -38,28 +66,44 @@
     
     <!-- Study Plan Creation -->
     <div class="study-plan-section">
-      <h4>Create Study Plan with Spaced Repetition</h4>
+      <h4>Create Study Plan with Customizable Spaced Repetition</h4>
       <div class="plan-controls">
-        <select v-model="selectedPlanType" class="plan-select">
-          <option v-for="plan in planTypes" :key="plan.value" :value="plan.value">
-            {{ plan.icon }} {{ plan.label }} - {{ plan.description }}
-          </option>
-        </select>
+        <div class="plan-row">
+          <select v-model="selectedPlanType" class="plan-select">
+            <option v-for="plan in planTypes" :key="plan.value" :value="plan.value">
+              {{ plan.label }} - {{ plan.description }}
+            </option>
+          </select>
+          <select v-model="selectedIntervalType" class="interval-select">
+            <option v-for="interval in intervalTypes" :key="interval.value" :value="interval.value">
+              {{ interval.label }}
+            </option>
+          </select>
+        </div>
         <button 
           @click="createStudyPlan" 
           :disabled="words.length === 0"
           class="create-plan-btn"
         >
-          Create Study Plan
+          Create Custom Study Plan
         </button>
       </div>
+      <div class="interval-preview" v-if="selectedIntervalType">
+        <p><strong>{{ getSelectedIntervalInfo().label }} Schedule:</strong></p>
+        <div class="interval-display">
+          <span v-for="(interval, index) in getSelectedIntervalInfo().intervals" :key="index" class="interval-badge">
+            L{{ index }}: {{ interval }}d
+          </span>
+        </div>
+        <p class="interval-description">{{ getSelectedIntervalInfo().description }}</p>
+      </div>
       <div class="plan-info">
-        <p><strong>Memory Curve Benefits:</strong></p>
+        <p><strong>Enhanced Memory Curve Features:</strong></p>
         <ul>
-          <li>Optimized review intervals based on forgetting curve</li>
-          <li>Automatic difficulty adjustment for each word</li>
-          <li>Progress tracking with mastery levels</li>
-          <li>Daily study targets and scheduling</li>
+          <li>5 customizable spaced repetition algorithms</li>
+          <li>Adaptive difficulty based on word complexity</li>
+          <li>Personalized review schedules</li>
+          <li>Advanced progress analytics</li>
         </ul>
       </div>
     </div>
@@ -143,6 +187,7 @@
 import { ref, computed } from 'vue'
 import { WordLibrary } from '../services/wordLibrary.js'
 import { StudyPlanService } from '../services/studyPlanService.js'
+import { SubjectLibrary } from '../services/subjectLibrary.js'
 
 const props = defineProps({
   words: Array
@@ -153,13 +198,18 @@ const emit = defineEmits(['add-word', 'remove-word', 'import-words', 'create-stu
 // Word Generation state
 const selectedGrade = ref('')
 const wordCount = ref(5)
+const selectedSubject = ref('')
+const subjectWordCount = ref(5)
 const generationError = ref('')
 const generationSuccess = ref(0)
 const gradeOptions = WordLibrary.getGradeOptions()
+const subjectOptions = SubjectLibrary.getSubjectOptions()
 
 // Study Plan state
 const selectedPlanType = ref('balanced')
+const selectedIntervalType = ref('default')
 const planTypes = StudyPlanService.getPlanTypes()
+const intervalTypes = StudyPlanService.getIntervalTypes()
 
 // Manual word addition
 const newWord = ref({
@@ -204,7 +254,38 @@ const generateWords = () => {
   }
 }
 
-// Study plan creation
+// Subject word generation
+const generateSubjectWords = () => {
+  if (!selectedSubject.value) return
+  
+  generationError.value = ''
+  generationSuccess.value = 0
+  
+  try {
+    const generatedWords = SubjectLibrary.generateWordsBySubject(
+      selectedSubject.value, 
+      subjectWordCount.value || 5
+    )
+    
+    // Add each generated word
+    generatedWords.forEach(word => {
+      emit('add-word', word)
+    })
+    
+    generationSuccess.value = generatedWords.length
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      generationSuccess.value = 0
+    }, 3000)
+    
+  } catch (error) {
+    generationError.value = `Failed to generate subject words: ${error.message}`
+    console.error('Subject word generation error:', error)
+  }
+}
+
+// Study plan creation with custom intervals
 const createStudyPlan = () => {
   if (props.words.length === 0) {
     generationError.value = 'Please add some words before creating a study plan'
@@ -212,16 +293,25 @@ const createStudyPlan = () => {
   }
   
   try {
-    const studyPlan = StudyPlanService.createStudyPlan(props.words, selectedPlanType.value)
+    const studyPlan = StudyPlanService.createStudyPlan(
+      props.words, 
+      selectedPlanType.value, 
+      selectedIntervalType.value
+    )
     emit('create-study-plan', studyPlan)
     
-    generationSuccess.value = `Study plan created with ${studyPlan.totalWords} words!`
+    generationSuccess.value = `Custom study plan created with ${studyPlan.totalWords} words using ${getSelectedIntervalInfo().label}!`
     setTimeout(() => {
       generationSuccess.value = 0
     }, 3000)
   } catch (error) {
     generationError.value = `Failed to create study plan: ${error.message}`
   }
+}
+
+// Get selected interval type information
+const getSelectedIntervalInfo = () => {
+  return intervalTypes.find(type => type.value === selectedIntervalType.value) || intervalTypes[0]
 }
 
 // Manual word management
@@ -300,19 +390,71 @@ const exportWords = () => {
 
 .plan-controls {
   display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.plan-row {
+  display: flex;
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 15px;
 }
 
 .plan-select {
   flex: 1;
-  min-width: 300px;
+  min-width: 250px;
   padding: 10px;
   border: none;
   border-radius: 6px;
   font-size: 14px;
+}
+
+.interval-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.subject-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.interval-preview {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.interval-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.interval-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.interval-description {
+  font-size: 0.9em;
+  font-style: italic;
+  margin: 10px 0 0 0;
 }
 
 .create-plan-btn {
@@ -362,11 +504,24 @@ const exportWords = () => {
   font-size: 1.2em;
 }
 
-.ai-controls {
+.generation-controls {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.subject-section {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.subject-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 1.2em;
 }
 
 .grade-select {
@@ -607,13 +762,26 @@ const exportWords = () => {
     flex-direction: column;
   }
   
-  .ai-controls {
+  .generation-controls {
     flex-direction: column;
     align-items: stretch;
   }
   
-  .grade-select, .count-input, .generate-btn {
+  .grade-select, .subject-select, .count-input, .generate-btn {
     width: 100%;
+  }
+  
+  .plan-row {
+    flex-direction: column;
+  }
+  
+  .plan-select, .interval-select {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .interval-display {
+    justify-content: center;
   }
   
   .word-main {
