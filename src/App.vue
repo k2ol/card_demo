@@ -2,13 +2,16 @@
 import { ref, onMounted, computed } from 'vue'
 import WordCard from './components/WordCard.vue'
 import WordManager from './components/WordManager.vue'
+import StudyPlan from './components/StudyPlan.vue'
 
 // App state
-const currentView = ref('study') // 'study' or 'manage'
+const currentView = ref('study') // 'study', 'manage', or 'plan'
 const words = ref([])
 const currentWordIndex = ref(0)
 const studyMode = ref('sequential') // 'sequential' or 'random'
 const studiedWords = ref(new Set())
+const currentStudyPlan = ref(null)
+const studySession = ref(null)
 
 // Default words for demo
 const defaultWords = [
@@ -123,6 +126,32 @@ const importWords = (importedWords) => {
   saveWords()
 }
 
+const createStudyPlan = (studyPlan) => {
+  currentStudyPlan.value = studyPlan
+  localStorage.setItem('currentStudyPlan', JSON.stringify(studyPlan))
+  currentView.value = 'plan'
+}
+
+const startStudySession = (sessionWords) => {
+  studySession.value = {
+    words: sessionWords,
+    currentIndex: 0,
+    startTime: new Date()
+  }
+  currentView.value = 'study'
+}
+
+const loadStudyPlan = () => {
+  const saved = localStorage.getItem('currentStudyPlan')
+  if (saved) {
+    try {
+      currentStudyPlan.value = JSON.parse(saved)
+    } catch (error) {
+      console.error('Failed to load study plan:', error)
+    }
+  }
+}
+
 const switchView = (view) => {
   currentView.value = view
 }
@@ -134,6 +163,7 @@ const toggleStudyMode = () => {
 // Lifecycle
 onMounted(() => {
   loadWords()
+  loadStudyPlan()
 })
 </script>
 
@@ -156,6 +186,14 @@ onMounted(() => {
           class="nav-tab"
         >
           Manage Words
+        </button>
+        <button 
+          @click="switchView('plan')" 
+          :class="{ active: currentView === 'plan' }"
+          class="nav-tab"
+          :disabled="!currentStudyPlan"
+        >
+          Study Plan
         </button>
       </nav>
     </header>
@@ -219,7 +257,25 @@ onMounted(() => {
         @add-word="addWord"
         @remove-word="removeWord"
         @import-words="importWords"
+        @create-study-plan="createStudyPlan"
       />
+    </main>
+
+    <!-- Study Plan View -->
+    <main v-if="currentView === 'plan'" class="plan-view">
+      <StudyPlan 
+        v-if="currentStudyPlan"
+        :study-plan="currentStudyPlan"
+        @start-session="startStudySession"
+        @back-to-manage="switchView('manage')"
+      />
+      <div v-else class="no-plan">
+        <h2>No Study Plan</h2>
+        <p>Create a study plan in the "Manage Words" section to get started with spaced repetition learning.</p>
+        <button @click="switchView('manage')" class="create-plan-btn">
+          Go to Manage Words
+        </button>
+      </div>
     </main>
   </div>
 </template>
@@ -264,8 +320,15 @@ onMounted(() => {
   color: white;
 }
 
-.nav-tab:hover:not(.active) {
+.nav-tab:hover:not(.active):not(:disabled) {
   background: #e9ecef;
+}
+
+.nav-tab:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .study-view {
@@ -411,6 +474,47 @@ onMounted(() => {
 
 .manage-view {
   padding: 40px 20px;
+}
+
+.plan-view {
+  padding: 20px;
+}
+
+.no-plan {
+  max-width: 600px;
+  margin: 50px auto;
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.no-plan h2 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.no-plan p {
+  color: #666;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+.no-plan .create-plan-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.no-plan .create-plan-btn:hover {
+  background: #5a67d8;
 }
 
 /* Responsive design */
